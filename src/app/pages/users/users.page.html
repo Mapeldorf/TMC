@@ -1,0 +1,5 @@
+<app-pagination
+  [total]="currentPageUsers()?.total"
+  (selectedPage)="fetchPage($event)"
+/>
+<app-list [users]="currentPageUsers()" />
