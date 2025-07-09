@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { UsersService } from '../../services/users.service';
 import {
   BehaviorSubject,
@@ -12,20 +12,30 @@ import { User } from '../../interfaces/user.interface';
 import { TemplateModel } from '../../interfaces/template-model.interface';
 import { PaginationComponent } from '../../components/pagination.component';
 import { ListComponent } from '../../components/list.component';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FilterComponent } from '../../components/filter.component';
+import { FormValue } from '../../interfaces/form-value.interface';
 
 @Component({
   templateUrl: './users.page.html',
-  imports: [PaginationComponent, ListComponent],
+  imports: [PaginationComponent, ListComponent, FilterComponent],
 })
 export class UsersPage {
   private readonly usersService = inject(UsersService);
 
   private readonly currentPage = new BehaviorSubject(1);
 
+  private readonly formValue = new BehaviorSubject<FormValue>({
+    name: '',
+    email: '',
+  });
+
+  private readonly destroyRef = inject(DestroyRef);
+
   private readonly allUsers$: Observable<
     Record<number, Observable<TemplateModel<User>>>
   > = this.currentPage.pipe(
+    takeUntilDestroyed(this.destroyRef),
     scan((acc: Record<number, Observable<TemplateModel<User>>>, page) => {
       if (!acc[page]) {
         acc = {
@@ -41,6 +51,7 @@ export class UsersPage {
 
   readonly currentPageUsers$ = this.allUsers$.pipe(
     withLatestFrom(this.currentPage),
+    takeUntilDestroyed(this.destroyRef),
     mergeMap(([users, page]) => {
       return users[page];
     }),
@@ -48,7 +59,11 @@ export class UsersPage {
 
   readonly currentPageUsers = toSignal(this.currentPageUsers$);
 
-  fetchPage(page: number): void {
+  setCurrentPage(page: number): void {
     this.currentPage.next(page);
+  }
+
+  setFormValue(formValue: FormValue): void {
+    this.formValue.next(formValue);
   }
 }
