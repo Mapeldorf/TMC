@@ -53,14 +53,14 @@ export class UsersPage {
 
   private readonly destroyRef = inject(DestroyRef);
 
+  private readonly formValueSubject = new Subject<FormValue>();
+
+  private readonly formValue$ = this.formValueSubject.asObservable();
+
   private readonly selectedPageSubject = new BehaviorSubject<NextPageTrigger>({
     page: 1,
     type: SearchType.WITHOUT_FILTERS,
   });
-
-  private readonly formValueSubject = new Subject<FormValue>();
-
-  private readonly formValue$ = this.formValueSubject.asObservable();
 
   private readonly selectedPage$ = merge(
     this.selectedPageSubject,
@@ -77,6 +77,10 @@ export class UsersPage {
     ),
   );
 
+  private readonly allUserData$ = this.getUsersUseCase
+    .execute()
+    .pipe(shareReplay({ refCount: true, bufferSize: 1 }));
+
   private readonly usersWithoutFilters$ = this.selectedPage$.pipe(
     filter(({ type }) => type === SearchType.WITHOUT_FILTERS),
     takeUntilDestroyed(this.destroyRef),
@@ -84,7 +88,7 @@ export class UsersPage {
       if (!acc[page]) {
         acc = {
           ...acc,
-          [page]: this.getUsers({ page, limit: 2 }),
+          [page]: this.getUsersWithoutFilters({ page, limit: 2 }),
         };
       }
       return acc;
@@ -97,9 +101,9 @@ export class UsersPage {
         (formValue) => Boolean(formValue.email) || Boolean(formValue.name),
       ),
     ),
-    this.getUsers(),
     this.selectedPage$.pipe(
       filter(({ type }) => type === SearchType.WITH_FILTERS),
+      switchMap(() => this.allUserData$),
     ),
   ]).pipe(
     map(([formValue, users]) => {
@@ -161,14 +165,12 @@ export class UsersPage {
     this.formValueSubject.next(formValue);
   }
 
-  private getUsers(
-    usersRequest?: UsersRequest,
-  ): Observable<TemplateModel<User>> {
-    const params = usersRequest
-      ? { page: usersRequest.page, limit: usersRequest.limit }
-      : undefined;
+  private getUsersWithoutFilters({
+    page,
+    limit,
+  }: UsersRequest): Observable<TemplateModel<User>> {
     return this.getUsersUseCase
-      .execute(params)
+      .execute({ page, limit })
       .pipe(shareReplay({ refCount: true, bufferSize: 1 }));
   }
 }
