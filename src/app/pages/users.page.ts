@@ -27,13 +27,24 @@ import { SearchType } from '../enums/search-type.enum';
 
 @Component({
   template: `
-    <app-filter (formValue)="setFormValue($event)" />
-    <app-pagination
-      [type]="selectedPageType()"
-      [total]="selectedPageUsersTotal()"
-      (selectedPage)="setSelectedPage($event)"
-    />
-    <app-list [users]="selectedPageUsers()" />
+    <main class="p-6 space-y-8 bg-gray-100 min-h-screen">
+      <section aria-labelledby="filter-section">
+        <h2 id="filter-section" class="sr-only">Filtro de usuarios</h2>
+        <app-filter (formValue)="setFormValue($event)" />
+      </section>
+      <section aria-labelledby="pagination-section">
+        <h2 id="pagination-section" class="sr-only">Paginación</h2>
+        <app-pagination
+          [type]="selectedPageType()"
+          [total]="selectedPageUsersTotal()"
+          (selectedPage)="setSelectedPage($event)"
+        />
+      </section>
+      <section aria-labelledby="list-section">
+        <h2 id="list-section" class="sr-only">Listado de usuarios</h2>
+        <app-list [users]="selectedPageUsers()" />
+      </section>
+    </main>
   `,
   imports: [PaginationComponent, ListComponent, FilterComponent],
 })

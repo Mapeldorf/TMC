@@ -8,14 +8,21 @@ import { User } from '../interfaces/user.interface';
   template: `
     @if (users(); as users) {
       @if (users.loading) {
-        <div class="flex justify-center items-center h-full w-full p-8">
+        <div
+          class="flex justify-center items-center h-full w-full p-8"
+          role="status"
+          aria-live="polite"
+        >
           <div
             class="animate-spin rounded-full h-16 w-16 border-4 border-sky-500 border-t-transparent"
+            aria-hidden="true"
           ></div>
+          <span class="sr-only">Cargando...</span>
         </div>
       } @else if (users.error) {
         <div
           class="flex items-center gap-3 p-4 rounded-xl bg-red-100 text-red-700 border border-red-300 shadow-sm"
+          role="alert"
         >
           <svg
             class="w-6 h-6 text-red-500"
@@ -24,6 +31,7 @@ import { User } from '../interfaces/user.interface';
             stroke-width="2"
             viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
           >
             <path
               stroke-linecap="round"
@@ -37,14 +45,18 @@ import { User } from '../interfaces/user.interface';
           >
         </div>
       } @else if (users.items.length) {
-        <div class="overflow-x-auto bg-white rounded-2xl shadow-md p-4">
+        <div
+          class="overflow-x-auto bg-white rounded-2xl shadow-md p-4"
+          role="region"
+          aria-label="Tabla de usuarios"
+        >
           <table class="min-w-full table-auto">
             <thead class="bg-sky-100 text-sky-700">
               <tr>
-                <th class="text-left px-4 py-2">Name</th>
-                <th class="text-left px-4 py-2">Email</th>
-                <th class="text-left px-4 py-2">Phone</th>
-                <th class="text-left px-4 py-2">Company</th>
+                <th class="text-left px-4 py-2 scope-col">Nombre</th>
+                <th class="text-left px-4 py-2 scope-col">Email</th>
+                <th class="text-left px-4 py-2 scope-col">Teléfono</th>
+                <th class="text-left px-4 py-2 scope-col">Empresa</th>
               </tr>
             </thead>
             <tbody>
@@ -62,6 +74,8 @@ import { User } from '../interfaces/user.interface';
       } @else {
         <div
           class="flex flex-col items-center justify-center text-center p-8 bg-white rounded-xl shadow-md border border-gray-200 text-gray-500"
+          role="status"
+          aria-live="polite"
         >
           <p class="text-lg font-medium">No hay elementos para mostrar</p>
           <p class="text-sm mt-1">
