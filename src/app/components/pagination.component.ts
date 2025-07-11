@@ -1,10 +1,11 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, model, output } from '@angular/core';
 import { NextPageTrigger } from '../interfaces/next-page-trigger.interface';
 import { SearchType } from '../enums/search-type.enum';
+import { NgClass } from '@angular/common';
 
 @Component({
   standalone: true,
-  imports: [],
+  imports: [NgClass],
   selector: 'app-pagination',
   template: `
     <nav
@@ -16,7 +17,14 @@ import { SearchType } from '../enums/search-type.enum';
         <button
           type="button"
           (click)="setSelectedPage($index)"
-          class="px-4 py-2 bg-white border border-sky-300 text-sky-600 rounded-lg hover:bg-sky-100 transition focus:outline-none focus:ring-2 focus:ring-sky-400"
+          class="px-4 py-2 rounded-lg transition focus:outline-none focus:ring-2"
+          [ngClass]="{
+            'bg-sky-500 text-white border border-sky-600 hover:bg-sky-600 focus:ring-sky-300':
+              currentIndex() === $index,
+            'bg-white text-sky-600 border border-sky-300 hover:bg-sky-100 focus:ring-sky-400':
+              currentIndex() !== $index,
+          }"
+          [attr.aria-current]="currentIndex() === $index ? 'page' : null"
           [attr.aria-label]="'Ir a la página ' + ($index + 1)"
         >
           Página {{ $index + 1 }}
@@ -27,6 +35,8 @@ import { SearchType } from '../enums/search-type.enum';
 })
 export class PaginationComponent {
   selectedPage = output<NextPageTrigger>();
+
+  currentIndex = model(0);
 
   total = input<number>();
 
@@ -41,6 +51,7 @@ export class PaginationComponent {
   });
 
   setSelectedPage(pageNumber: number): void {
+    this.currentIndex.set(pageNumber);
     const type = this.type();
     if (type) {
       this.selectedPage.emit({ page: pageNumber + 1, type });
