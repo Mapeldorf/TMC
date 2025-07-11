@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TemplateModel } from '../interfaces/template-model.interface';
 import { User } from '../interfaces/user.interface';
 
@@ -61,7 +61,10 @@ import { User } from '../interfaces/user.interface';
             </thead>
             <tbody>
               @for (user of users.items; track $index) {
-                <tr class="border-b hover:bg-gray-100">
+                <tr
+                  (click)="setSelectedUser(user)"
+                  class="border-b hover:bg-gray-100"
+                >
                   <td class="px-4 py-3">{{ user.name }}</td>
                   <td class="px-4 py-3">{{ user.email }}</td>
                   <td class="px-4 py-3">{{ user.phone }}</td>
@@ -87,5 +90,11 @@ import { User } from '../interfaces/user.interface';
   `,
 })
 export class ListComponent {
-  users = input<TemplateModel<User>>();
+  readonly users = input<TemplateModel<User>>();
+
+  readonly selectedUser = output<User>();
+
+  setSelectedUser(user: User): void {
+    this.selectedUser.emit(user);
+  }
 }

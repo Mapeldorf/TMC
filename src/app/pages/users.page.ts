@@ -25,6 +25,7 @@ import { GetUsersUseCase } from '../use-cases/get-users.use-case';
 import { UsersRequest } from '../interfaces/users-request.interface';
 import { NextPageTrigger } from '../interfaces/next-page-trigger.interface';
 import { SearchType } from '../enums/search-type.enum';
+import { UserDetailModalComponent } from '../components/user-detail-modal.component';
 
 @Component({
   template: `
@@ -44,11 +45,24 @@ import { SearchType } from '../enums/search-type.enum';
       </section>
       <section aria-labelledby="list-section">
         <h2 id="list-section" class="sr-only">Listado de usuarios</h2>
-        <app-list [users]="selectedPageUsers()" />
+        <app-list
+          (selectedUser)="openUserDetailModal($event)"
+          [users]="selectedPageUsers()"
+        />
       </section>
+      <app-user-detail-modal
+        [open]="modalOpen()"
+        [user]="selectedUser"
+        (closeModal)="modalOpen.set(false)"
+      />
     </main>
   `,
-  imports: [PaginationComponent, ListComponent, FilterComponent],
+  imports: [
+    PaginationComponent,
+    ListComponent,
+    FilterComponent,
+    UserDetailModalComponent,
+  ],
 })
 export class UsersPage {
   private readonly getUsersUseCase = inject(GetUsersUseCase);
@@ -83,6 +97,10 @@ export class UsersPage {
   );
 
   currentIndex = signal<number>(0);
+
+  readonly modalOpen = signal(false);
+
+  selectedUser!: User;
 
   private readonly allUserData$ = this.getUsersUseCase
     .execute()
@@ -171,6 +189,15 @@ export class UsersPage {
 
   setFormValue(formValue: FormValue): void {
     this.formValueSubject.next(formValue);
+  }
+
+  openUserDetailModal(user: User): void {
+    this.selectedUser = user;
+    this.modalOpen.set(true);
+  }
+
+  closeUserDetailModal(): void {
+    this.modalOpen.set(false);
   }
 
   private getUsersWithoutFilters({
