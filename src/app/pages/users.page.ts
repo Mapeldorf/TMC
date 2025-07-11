@@ -125,7 +125,11 @@ export class UsersPage {
   private readonly selectedPageUsers$ = this.allUsers$.pipe(
     withLatestFrom(this.selectedPage$),
     takeUntilDestroyed(this.destroyRef),
-    switchMap(([users, selectedPage]) => users[selectedPage.page]),
+    switchMap(
+      ([users, selectedPage]) =>
+        users[selectedPage.page] ??
+        of({ items: [], loading: false, error: false, total: 0 }),
+    ),
   );
 
   readonly selectedPageUsers = toSignal(this.selectedPageUsers$);

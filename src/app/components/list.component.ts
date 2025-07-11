@@ -63,20 +63,6 @@ import { User } from '../interfaces/user.interface';
         <div
           class="flex flex-col items-center justify-center text-center p-8 bg-white rounded-xl shadow-md border border-gray-200 text-gray-500"
         >
-          <svg
-            class="w-12 h-12 mb-4 text-sky-400"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M9 17v-2a4 4 0 0 1 6 0v2m4 0a4 4 0 0 0-8 0v2m0 0H5a2 2 0 0 1-2-2v-1a10 10 0 0 1 20 0v1a2 2 0 0 1-2 2h-4z"
-            />
-          </svg>
           <p class="text-lg font-medium">No hay elementos para mostrar</p>
           <p class="text-sm mt-1">
             Intenta aplicar otros filtros o vuelve más tarde.
