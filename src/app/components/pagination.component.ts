@@ -1,14 +1,22 @@
 import { Component, computed, input, output } from '@angular/core';
-import { NextPageTrigger, SearchType } from '../pages/users/users.page';
+import { NextPageTrigger } from '../interfaces/next-page-trigger.interface';
+import { SearchType } from '../enums/search-type.enum';
 
 @Component({
   standalone: true,
   imports: [],
   selector: 'app-pagination',
   template: `
-    @for (page of pages(); track $index) {
-      <button (click)="setSelectedPage($index)">Page {{ $index + 1 }}</button>
-    }
+    <div class="flex flex-wrap justify-center gap-4 mt-8">
+      @for (page of pages(); track $index) {
+        <button
+          (click)="setSelectedPage($index)"
+          class="px-4 py-2 bg-white border border-sky-300 text-sky-600 rounded-lg hover:bg-sky-100 transition"
+        >
+          Page {{ $index + 1 }}
+        </button>
+      }
+    </div>
   `,
 })
 export class PaginationComponent {

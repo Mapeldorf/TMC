@@ -1,7 +1,0 @@
-<app-filter (formValue)="setFormValue($event)" />
-<app-pagination
-  [type]="selectedPageType()"
-  [total]="selectedPageUsersTotal()"
-  (selectedPage)="setSelectedPage($event)"
-/>
-<app-list [users]="selectedPageUsers()" />

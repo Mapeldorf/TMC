@@ -13,20 +13,28 @@ import {
   switchMap,
   withLatestFrom,
 } from 'rxjs';
-import { User } from '../../interfaces/user.interface';
-import { TemplateModel } from '../../interfaces/template-model.interface';
-import { PaginationComponent } from '../../components/pagination.component';
-import { ListComponent } from '../../components/list.component';
+import { User } from '../interfaces/user.interface';
+import { TemplateModel } from '../interfaces/template-model.interface';
+import { PaginationComponent } from '../components/pagination.component';
+import { ListComponent } from '../components/list.component';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FilterComponent } from '../../components/filter.component';
-import { FormValue } from '../../interfaces/form-value.interface';
-import { GetUsersUseCase } from '../../use-cases/get-users.use-case';
-import { UsersRequest } from '../../interfaces/users-request.interface';
-import { NextPageTrigger } from '../../interfaces/next-page-trigger.interface';
-import { SearchType } from '../../enums/search-type.enum';
+import { FilterComponent } from '../components/filter.component';
+import { FormValue } from '../interfaces/form-value.interface';
+import { GetUsersUseCase } from '../use-cases/get-users.use-case';
+import { UsersRequest } from '../interfaces/users-request.interface';
+import { NextPageTrigger } from '../interfaces/next-page-trigger.interface';
+import { SearchType } from '../enums/search-type.enum';
 
 @Component({
-  templateUrl: './users.page.html',
+  template: `
+    <app-filter (formValue)="setFormValue($event)" />
+    <app-pagination
+      [type]="selectedPageType()"
+      [total]="selectedPageUsersTotal()"
+      (selectedPage)="setSelectedPage($event)"
+    />
+    <app-list [users]="selectedPageUsers()" />
+  `,
   imports: [PaginationComponent, ListComponent, FilterComponent],
 })
 export class UsersPage {
@@ -101,8 +109,8 @@ export class UsersPage {
         usersRecord[page] = of({
           items: pageItems,
           total: filteredItems.length,
-          loading: false,
-          error: false,
+          loading: users.loading,
+          error: users.error,
         });
       }
       return usersRecord;

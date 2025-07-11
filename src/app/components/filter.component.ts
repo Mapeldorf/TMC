@@ -7,16 +7,35 @@ import { FormValue } from '../interfaces/form-value.interface';
   imports: [ReactiveFormsModule],
   selector: 'app-filter',
   template: `
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <div>
-        <label for="name">Name</label>
-        <input id="name" type="text" formControlName="name" />
+    <form
+      [formGroup]="form"
+      (ngSubmit)="onSubmit()"
+      class="bg-white p-6 rounded-2xl shadow-md space-y-6"
+    >
+      <div class="space-y-2">
+        <label for="name" class="block text-sky-700 font-medium">Name</label>
+        <input
+          id="name"
+          type="text"
+          formControlName="name"
+          class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400"
+        />
       </div>
-      <div>
-        <label for="email">Email</label>
-        <input id="email" type="email" formControlName="email" />
+      <div class="space-y-2">
+        <label for="email" class="block text-sky-700 font-medium">Email</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400"
+        />
       </div>
-      <button type="submit">Submit</button>
+      <button
+        type="submit"
+        class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+      >
+        Submit
+      </button>
     </form>
   `,
 })
