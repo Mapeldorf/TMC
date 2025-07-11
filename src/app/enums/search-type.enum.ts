@@ -1,0 +1,4 @@
+export enum SearchType {
+  WITHOUT_FILTERS = 'WITHOUT_FILTERS',
+  WITH_FILTERS = 'WITH_FILTERS',
+}

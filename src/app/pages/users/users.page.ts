@@ -1,5 +1,4 @@
 import { Component, computed, DestroyRef, inject } from '@angular/core';
-import { UsersRequest, UsersService } from '../../services/users.service';
 import {
   BehaviorSubject,
   combineLatest,
@@ -21,23 +20,17 @@ import { ListComponent } from '../../components/list.component';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FilterComponent } from '../../components/filter.component';
 import { FormValue } from '../../interfaces/form-value.interface';
-
-export interface NextPageTrigger {
-  page: number;
-  type: SearchType;
-}
-
-export enum SearchType {
-  WITHOUT_FILTERS = 'WITHOUT_FILTERS',
-  WITH_FILTERS = 'WITH_FILTERS',
-}
+import { GetUsersUseCase } from '../../use-cases/get-users.use-case';
+import { UsersRequest } from '../../interfaces/users-request.interface';
+import { NextPageTrigger } from '../../interfaces/next-page-trigger.interface';
+import { SearchType } from '../../enums/search-type.enum';
 
 @Component({
   templateUrl: './users.page.html',
   imports: [PaginationComponent, ListComponent, FilterComponent],
 })
 export class UsersPage {
-  private readonly usersService = inject(UsersService);
+  private readonly getUsersUseCase = inject(GetUsersUseCase);
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -116,7 +109,10 @@ export class UsersPage {
     }),
   );
 
-  readonly allUsers$ = merge(this.usersWithoutFilters$, this.usersWithFilters$);
+  private readonly allUsers$ = merge(
+    this.usersWithoutFilters$,
+    this.usersWithFilters$,
+  );
 
   private readonly selectedPageUsers$ = this.allUsers$.pipe(
     withLatestFrom(this.selectedPage$),
@@ -148,8 +144,8 @@ export class UsersPage {
     const params = usersRequest
       ? { page: usersRequest.page, limit: usersRequest.limit }
       : undefined;
-    return this.usersService
-      .fetch(params)
+    return this.getUsersUseCase
+      .execute(params)
       .pipe(shareReplay({ refCount: true, bufferSize: 1 }));
   }
 }
