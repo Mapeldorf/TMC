@@ -63,7 +63,12 @@ import { User } from '../interfaces/user.interface';
               @for (user of users.items; track $index) {
                 <tr
                   (click)="setSelectedUser(user)"
-                  class="border-b hover:bg-gray-100"
+                  (keydown.enter)="setSelectedUser(user)"
+                  (keydown.space)="setSelectedUser(user)"
+                  tabindex="0"
+                  role="button"
+                  class="border-b hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                  [attr.aria-label]="'Ver detalles de ' + user.name"
                 >
                   <td class="px-4 py-3">{{ user.name }}</td>
                   <td class="px-4 py-3">{{ user.email }}</td>
