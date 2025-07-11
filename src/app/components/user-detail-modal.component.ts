@@ -17,16 +17,16 @@ import { User } from '../interfaces/user.interface';
     @if (open()) {
       @if (user(); as user) {
         <div
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-out opacity-100"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
           aria-describedby="modal-description"
         >
           <div
-            class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-7 space-y-8 outline-none"
-            tabindex="-1"
             #modalPanel
+            class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-7 space-y-8 outline-none transform transition-all duration-300 ease-out opacity-0 scale-95 animate-fade-in"
+            tabindex="-1"
           >
             <div class="flex items-start justify-between">
               <h2 id="modal-title" class="text-2xl font-semibold text-sky-700">
