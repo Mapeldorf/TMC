@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import {
   BehaviorSubject,
   combineLatest,
@@ -11,6 +11,7 @@ import {
   shareReplay,
   Subject,
   switchMap,
+  tap,
   withLatestFrom,
 } from 'rxjs';
 import { User } from '../interfaces/user.interface';
@@ -35,6 +36,7 @@ import { SearchType } from '../enums/search-type.enum';
       <section aria-labelledby="pagination-section">
         <h2 id="pagination-section" class="sr-only">Paginación</h2>
         <app-pagination
+          [currentIndex]="currentIndex()"
           [type]="selectedPageType()"
           [total]="selectedPageUsersTotal()"
           (selectedPage)="setSelectedPage($event)"
@@ -74,8 +76,13 @@ export class UsersPage {
               : SearchType.WITHOUT_FILTERS,
         };
       }),
+      tap(() => {
+        this.currentIndex.set(0);
+      }),
     ),
   );
+
+  currentIndex = signal<number>(0);
 
   private readonly allUserData$ = this.getUsersUseCase
     .execute()
@@ -158,6 +165,7 @@ export class UsersPage {
   readonly selectedPageType = computed(() => this.selectedPage()?.type);
 
   setSelectedPage(page: NextPageTrigger): void {
+    this.currentIndex.set(page.page - 1);
     this.selectedPageSubject.next(page);
   }
 
