@@ -14,49 +14,21 @@ import {
   tap,
   withLatestFrom,
 } from 'rxjs';
-import { User } from '../interfaces/user.interface';
-import { TemplateModel } from '../interfaces/template-model.interface';
-import { PaginationComponent } from '../components/pagination.component';
-import { ListComponent } from '../components/list.component';
+import { User } from '../../interfaces/user.interface';
+import { TemplateModel } from '../../interfaces/template-model.interface';
+import { PaginationComponent } from '../../components/pagination.component';
+import { ListComponent } from '../../components/list.component';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FilterComponent } from '../components/filter.component';
-import { FormValue } from '../interfaces/form-value.interface';
-import { GetUsersUseCase } from '../use-cases/get-users.use-case';
-import { UsersRequest } from '../interfaces/users-request.interface';
-import { NextPageTrigger } from '../interfaces/next-page-trigger.interface';
-import { SearchType } from '../enums/search-type.enum';
-import { UserDetailModalComponent } from '../components/user-detail-modal.component';
+import { FilterComponent } from '../../components/filter.component';
+import { FormValue } from '../../interfaces/form-value.interface';
+import { GetUsersUseCase } from '../../use-cases/get-users.use-case';
+import { UsersRequest } from '../../interfaces/users-request.interface';
+import { NextPageTrigger } from '../../interfaces/next-page-trigger.interface';
+import { SearchType } from '../../enums/search-type.enum';
+import { UserDetailModalComponent } from '../../components/user-detail-modal.component';
 
 @Component({
-  template: `
-    <main class="p-6 space-y-8 bg-gray-100 min-h-screen">
-      <section aria-labelledby="filter-section">
-        <h2 id="filter-section" class="sr-only">Filtro de usuarios</h2>
-        <app-filter (formValue)="setFormValue($event)" />
-      </section>
-      <section aria-labelledby="pagination-section">
-        <h2 id="pagination-section" class="sr-only">Paginación</h2>
-        <app-pagination
-          [currentIndex]="currentIndex()"
-          [type]="selectedPageType()"
-          [total]="selectedPageUsersTotal()"
-          (selectedPage)="setSelectedPage($event)"
-        />
-      </section>
-      <section aria-labelledby="list-section">
-        <h2 id="list-section" class="sr-only">Listado de usuarios</h2>
-        <app-list
-          (selectedUser)="openUserDetailModal($event)"
-          [users]="selectedPageUsers()"
-        />
-      </section>
-      <app-user-detail-modal
-        [open]="modalOpen()"
-        [user]="selectedUser"
-        (closeModal)="modalOpen.set(false)"
-      />
-    </main>
-  `,
+  templateUrl: './users.page.html',
   imports: [
     PaginationComponent,
     ListComponent,
@@ -96,7 +68,7 @@ export class UsersPage {
     ),
   );
 
-  currentIndex = signal<number>(0);
+  readonly currentIndex = signal<number>(0);
 
   readonly modalOpen = signal(false);
 
@@ -104,7 +76,10 @@ export class UsersPage {
 
   private readonly allUserData$ = this.getUsersUseCase
     .execute()
-    .pipe(shareReplay({ refCount: true, bufferSize: 1 }));
+    .pipe(
+      takeUntilDestroyed(this.destroyRef),
+      shareReplay({ refCount: true, bufferSize: 1 }),
+    );
 
   private readonly usersWithoutFilters$ = this.selectedPage$.pipe(
     filter(({ type }) => type === SearchType.WITHOUT_FILTERS),
@@ -132,30 +107,47 @@ export class UsersPage {
     ),
   ]).pipe(
     map(([formValue, users]) => {
-      const filteredItems = users.items.filter((user) => {
-        return (
-          (formValue.email &&
-            user.email.toLowerCase().includes(formValue.email.toLowerCase())) ||
-          (formValue.name &&
-            user.name.toLowerCase().includes(formValue.name.toLowerCase()))
-        );
-      });
-      const pageSize = 2;
-      const totalPages = Math.ceil(filteredItems.length / pageSize);
-      const usersRecord: Record<number, Observable<TemplateModel<User>>> = {};
-      for (let page = 1; page <= totalPages; page++) {
-        const start = (page - 1) * pageSize;
-        const pageItems = filteredItems.slice(start, start + pageSize);
-        usersRecord[page] = of({
-          items: pageItems,
-          total: filteredItems.length,
-          loading: users.loading,
-          error: users.error,
-        });
-      }
-      return usersRecord;
+      const filteredItems = this.getFilteredItemsForUsersWithFilters(
+        formValue,
+        users,
+      );
+      return this.getUsersRecordForUsersWithFilters(filteredItems, users);
     }),
   );
+
+  private getFilteredItemsForUsersWithFilters(
+    formValue: FormValue,
+    users: TemplateModel<User>,
+  ): User[] {
+    return users.items.filter((user) => {
+      return (
+        (formValue.email &&
+          user.email.toLowerCase().includes(formValue.email.toLowerCase())) ||
+        (formValue.name &&
+          user.name.toLowerCase().includes(formValue.name.toLowerCase()))
+      );
+    });
+  }
+
+  private getUsersRecordForUsersWithFilters(
+    filteredItems: User[],
+    users: TemplateModel<User>,
+  ): Record<number, Observable<TemplateModel<User>>> {
+    const pageSize = 2;
+    const totalPages = Math.ceil(filteredItems.length / pageSize);
+    const usersRecord: Record<number, Observable<TemplateModel<User>>> = {};
+    for (let page = 1; page <= totalPages; page++) {
+      const start = (page - 1) * pageSize;
+      const pageItems = filteredItems.slice(start, start + pageSize);
+      usersRecord[page] = of({
+        items: pageItems,
+        total: filteredItems.length,
+        loading: users.loading,
+        error: users.error,
+      });
+    }
+    return usersRecord;
+  }
 
   private readonly allUsers$ = merge(
     this.usersWithoutFilters$,
