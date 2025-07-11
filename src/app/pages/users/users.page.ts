@@ -1,11 +1,17 @@
-import { Component, DestroyRef, inject } from '@angular/core';
-import { UsersService } from '../../services/users.service';
+import { Component, computed, DestroyRef, inject } from '@angular/core';
+import { UsersRequest, UsersService } from '../../services/users.service';
 import {
   BehaviorSubject,
-  mergeMap,
+  combineLatest,
+  filter,
+  map,
+  merge,
   Observable,
+  of,
   scan,
   shareReplay,
+  Subject,
+  switchMap,
   withLatestFrom,
 } from 'rxjs';
 import { User } from '../../interfaces/user.interface';
@@ -16,6 +22,16 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FilterComponent } from '../../components/filter.component';
 import { FormValue } from '../../interfaces/form-value.interface';
 
+export interface NextPageTrigger {
+  page: number;
+  type: SearchType;
+}
+
+export enum SearchType {
+  WITHOUT_FILTERS = 'WITHOUT_FILTERS',
+  WITH_FILTERS = 'WITH_FILTERS',
+}
+
 @Component({
   templateUrl: './users.page.html',
   imports: [PaginationComponent, ListComponent, FilterComponent],
@@ -23,47 +39,117 @@ import { FormValue } from '../../interfaces/form-value.interface';
 export class UsersPage {
   private readonly usersService = inject(UsersService);
 
-  private readonly currentPage = new BehaviorSubject(1);
-
-  private readonly formValue = new BehaviorSubject<FormValue>({
-    name: '',
-    email: '',
-  });
-
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly allUsers$: Observable<
-    Record<number, Observable<TemplateModel<User>>>
-  > = this.currentPage.pipe(
+  private readonly selectedPageSubject = new BehaviorSubject<NextPageTrigger>({
+    page: 1,
+    type: SearchType.WITHOUT_FILTERS,
+  });
+
+  private readonly formValueSubject = new Subject<FormValue>();
+
+  private readonly formValue$ = this.formValueSubject.asObservable();
+
+  private readonly selectedPage$ = merge(
+    this.selectedPageSubject,
+    this.formValue$.pipe(
+      map((formValue) => {
+        return {
+          page: 1,
+          type:
+            Boolean(formValue.email) || Boolean(formValue.name)
+              ? SearchType.WITH_FILTERS
+              : SearchType.WITHOUT_FILTERS,
+        };
+      }),
+    ),
+  );
+
+  private readonly usersWithoutFilters$ = this.selectedPage$.pipe(
+    filter(({ type }) => type === SearchType.WITHOUT_FILTERS),
     takeUntilDestroyed(this.destroyRef),
-    scan((acc: Record<number, Observable<TemplateModel<User>>>, page) => {
+    scan((acc: Record<number, Observable<TemplateModel<User>>>, { page }) => {
       if (!acc[page]) {
         acc = {
           ...acc,
-          [page]: this.usersService
-            .fetch(page)
-            .pipe(shareReplay({ refCount: true, bufferSize: 1 })),
+          [page]: this.getUsers({ page, limit: 2 }),
         };
       }
       return acc;
     }, {}),
   );
 
-  readonly currentPageUsers$ = this.allUsers$.pipe(
-    withLatestFrom(this.currentPage),
-    takeUntilDestroyed(this.destroyRef),
-    mergeMap(([users, page]) => {
-      return users[page];
+  private readonly usersWithFilters$ = combineLatest([
+    this.formValue$.pipe(
+      filter(
+        (formValue) => Boolean(formValue.email) || Boolean(formValue.name),
+      ),
+    ),
+    this.getUsers(),
+    this.selectedPage$.pipe(
+      filter(({ type }) => type === SearchType.WITH_FILTERS),
+    ),
+  ]).pipe(
+    map(([formValue, users]) => {
+      const filteredItems = users.items.filter((user) => {
+        return (
+          (formValue.email &&
+            user.email.toLowerCase().includes(formValue.email.toLowerCase())) ||
+          (formValue.name &&
+            user.name.toLowerCase().includes(formValue.name.toLowerCase()))
+        );
+      });
+      const pageSize = 2;
+      const totalPages = Math.ceil(filteredItems.length / pageSize);
+      const usersRecord: Record<number, Observable<TemplateModel<User>>> = {};
+      for (let page = 1; page <= totalPages; page++) {
+        const start = (page - 1) * pageSize;
+        const pageItems = filteredItems.slice(start, start + pageSize);
+        usersRecord[page] = of({
+          items: pageItems,
+          total: filteredItems.length,
+          loading: false,
+          error: false,
+        });
+      }
+      return usersRecord;
     }),
   );
 
-  readonly currentPageUsers = toSignal(this.currentPageUsers$);
+  readonly allUsers$ = merge(this.usersWithoutFilters$, this.usersWithFilters$);
 
-  setCurrentPage(page: number): void {
-    this.currentPage.next(page);
+  private readonly selectedPageUsers$ = this.allUsers$.pipe(
+    withLatestFrom(this.selectedPage$),
+    takeUntilDestroyed(this.destroyRef),
+    switchMap(([users, selectedPage]) => users[selectedPage.page]),
+  );
+
+  readonly selectedPageUsers = toSignal(this.selectedPageUsers$);
+
+  readonly selectedPage = toSignal(this.selectedPage$);
+
+  readonly selectedPageUsersTotal = computed(
+    () => this.selectedPageUsers()?.total,
+  );
+
+  readonly selectedPageType = computed(() => this.selectedPage()?.type);
+
+  setSelectedPage(page: NextPageTrigger): void {
+    this.selectedPageSubject.next(page);
   }
 
   setFormValue(formValue: FormValue): void {
-    this.formValue.next(formValue);
+    this.formValueSubject.next(formValue);
+  }
+
+  private getUsers(
+    usersRequest?: UsersRequest,
+  ): Observable<TemplateModel<User>> {
+    const params = usersRequest
+      ? { page: usersRequest.page, limit: usersRequest.limit }
+      : undefined;
+    return this.usersService
+      .fetch(params)
+      .pipe(shareReplay({ refCount: true, bufferSize: 1 }));
   }
 }

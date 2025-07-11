@@ -16,14 +16,14 @@ import { FormValue } from '../interfaces/form-value.interface';
         <label for="email">Email</label>
         <input id="email" type="email" formControlName="email" />
       </div>
-      <button type="submit" [disabled]="form.invalid">Submit</button>
+      <button type="submit">Submit</button>
     </form>
   `,
 })
 export class FilterComponent {
   private readonly fb = inject(FormBuilder);
 
-  formValue = output<FormValue>();
+  readonly formValue = output<FormValue>();
 
   readonly form = this.fb.group({
     name: [''],
@@ -31,8 +31,6 @@ export class FilterComponent {
   });
 
   onSubmit(): void {
-    if (this.form.valid) {
-      this.formValue.emit(this.form.value);
-    }
+    this.formValue.emit(this.form.value);
   }
 }

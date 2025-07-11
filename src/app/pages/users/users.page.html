@@ -1,6 +1,7 @@
 <app-filter (formValue)="setFormValue($event)" />
 <app-pagination
-  [total]="currentPageUsers()?.total"
-  (selectedPage)="setCurrentPage($event)"
+  [type]="selectedPageType()"
+  [total]="selectedPageUsersTotal()"
+  (selectedPage)="setSelectedPage($event)"
 />
-<app-list [users]="currentPageUsers()" />
+<app-list [users]="selectedPageUsers()" />

@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { NextPageTrigger, SearchType } from '../pages/users/users.page';
 
 @Component({
   standalone: true,
@@ -11,19 +12,24 @@ import { Component, computed, input, output } from '@angular/core';
   `,
 })
 export class PaginationComponent {
-  selectedPage = output<number>();
+  selectedPage = output<NextPageTrigger>();
 
   total = input<number>();
+
+  type = input<SearchType>();
 
   pages = computed(() => {
     const total = this.total();
     if (total) {
-      return Array.from({ length: total / 2 });
+      return Array.from({ length: Math.ceil(total / 2) });
     }
     return [];
   });
 
   setSelectedPage(pageNumber: number): void {
-    this.selectedPage.emit(pageNumber + 1);
+    const type = this.type();
+    if (type) {
+      this.selectedPage.emit({ page: pageNumber + 1, type });
+    }
   }
 }
