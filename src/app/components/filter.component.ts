@@ -1,10 +1,12 @@
+import { NgClass } from '@angular/common';
 import { Component, inject, Output } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, filter, merge } from 'rxjs';
+import { debounceTime, filter, map, merge, startWith } from 'rxjs';
 
 @Component({
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, NgClass],
   selector: 'app-filter',
   template: `
     <form
@@ -34,8 +36,14 @@ import { debounceTime, filter, merge } from 'rxjs';
         />
       </div>
       <button
+        [disabled]="disabledState()"
         (click)="clearFilters()"
-        class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
+        [ngClass]="{
+          'bg-sky-500 hover:bg-sky-600 text-white cursor-pointer':
+            !disabledState(),
+          'bg-gray-300 text-gray-500 cursor-not-allowed': disabledState(),
+        }"
+        class="font-semibold py-2 px-4 rounded-lg transition duration-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
         aria-label="Limpiar filtros"
       >
         Limpiar Filtros
@@ -50,6 +58,13 @@ export class FilterComponent {
     name: [''],
     email: [''],
   });
+
+  private readonly disabledState$ = this.form.valueChanges.pipe(
+    map((formValue) => !formValue.name && !formValue.email),
+    startWith(true),
+  );
+
+  readonly disabledState = toSignal(this.disabledState$);
 
   private readonly formValueChange$ = this.form.valueChanges.pipe(
     filter(({ name, email }) => Boolean(email) || Boolean(name)),
