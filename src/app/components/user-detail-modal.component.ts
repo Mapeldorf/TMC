@@ -105,7 +105,7 @@ import { User } from '../interfaces/user.interface';
     }
   `,
 })
-export class UserDetailModalComponent implements AfterViewInit {
+export class UserDetailModalComponent {
   readonly open = input<boolean>();
 
   readonly user = input<User>();
@@ -121,7 +121,7 @@ export class UserDetailModalComponent implements AfterViewInit {
     }
   }
 
-  ngAfterViewInit(): void {
+  constructor() {
     effect(() => {
       if (this.open()) {
         queueMicrotask(() => {
