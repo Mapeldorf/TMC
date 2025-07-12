@@ -3,7 +3,6 @@ import {
   input,
   output,
   ElementRef,
-  AfterViewInit,
   effect,
   HostListener,
   viewChild,
