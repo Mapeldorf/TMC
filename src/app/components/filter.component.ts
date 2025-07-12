@@ -36,10 +36,18 @@ import { FormValue } from '../interfaces/form-value.interface';
       </div>
       <button
         type="submit"
-        class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
+        class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 mr-4 rounded-lg transition duration-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
         aria-label="Aplicar filtros"
       >
         Filtrar
+      </button>
+      <button
+        (click)="clearFilters()"
+        type="submit"
+        class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
+        aria-label="Limpiar filtros"
+      >
+        Limpiar Filtros
       </button>
     </form>
   `,
@@ -56,5 +64,10 @@ export class FilterComponent {
 
   onSubmit(): void {
     this.formValue.emit(this.form.value);
+  }
+
+  clearFilters(): void {
+    this.form.setValue({ email: '', name: '' });
+    this.onSubmit();
   }
 }
