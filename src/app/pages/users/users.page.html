@@ -16,6 +16,7 @@
     <h2 id="list-section" class="sr-only">Listado de usuarios</h2>
     <app-list
       (selectedUser)="openUserDetailModal($event)"
+      (retry)="retryOnError()"
       [users]="selectedPageUsers()"
     />
   </section>

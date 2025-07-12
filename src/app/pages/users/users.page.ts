@@ -1,6 +1,7 @@
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import {
   BehaviorSubject,
+  catchError,
   combineLatest,
   filter,
   map,
@@ -9,6 +10,7 @@ import {
   of,
   scan,
   shareReplay,
+  startWith,
   Subject,
   switchMap,
   tap,
@@ -45,6 +47,10 @@ export class UsersPage {
 
   private readonly formValue$ = this.formValueSubject.asObservable();
 
+  private readonly retryUsersWithoutFilters = new Subject<void>();
+
+  private readonly retryUsersWithFilters = new Subject<void>();
+
   private readonly selectedPageSubject = new BehaviorSubject<NextPageTrigger>({
     page: 1,
     type: SearchType.WITHOUT_FILTERS,
@@ -74,14 +80,17 @@ export class UsersPage {
 
   selectedUser!: User;
 
-  private readonly allUserData$ = this.getUsersUseCase
-    .execute()
-    .pipe(
-      takeUntilDestroyed(this.destroyRef),
-      shareReplay({ refCount: true, bufferSize: 1 }),
-    );
+  private readonly allUserData$ = this.getUsersUseCase.execute().pipe(
+    takeUntilDestroyed(this.destroyRef),
+    shareReplay({ refCount: true, bufferSize: 1 }),
+    catchError(() => {
+      return of({ items: [], loading: false, error: true, total: 0 });
+    }),
+  );
 
-  private readonly usersWithoutFilters$ = this.selectedPage$.pipe(
+  private readonly usersWithoutFilters$ = this.retryUsersWithoutFilters.pipe(
+    startWith(null),
+    switchMap(() => this.selectedPage$),
     filter(({ type }) => type === SearchType.WITHOUT_FILTERS),
     takeUntilDestroyed(this.destroyRef),
     scan((acc: Record<number, Observable<TemplateModel<User>>>, { page }) => {
@@ -95,17 +104,21 @@ export class UsersPage {
     }, {}),
   );
 
-  private readonly usersWithFilters$ = combineLatest([
-    this.formValue$.pipe(
-      filter(
-        (formValue) => Boolean(formValue.email) || Boolean(formValue.name),
-      ),
+  private readonly usersWithFilters$ = this.retryUsersWithFilters.pipe(
+    startWith(null),
+    switchMap(() =>
+      combineLatest([
+        this.formValue$.pipe(
+          filter(
+            (formValue) => Boolean(formValue.email) || Boolean(formValue.name),
+          ),
+        ),
+        this.selectedPage$.pipe(
+          filter(({ type }) => type === SearchType.WITH_FILTERS),
+          switchMap(() => this.allUserData$),
+        ),
+      ]),
     ),
-    this.selectedPage$.pipe(
-      filter(({ type }) => type === SearchType.WITH_FILTERS),
-      switchMap(() => this.allUserData$),
-    ),
-  ]).pipe(
     map(([formValue, users]) => {
       const filteredItems = this.getFilteredItemsForUsersWithFilters(
         formValue,
@@ -136,14 +149,24 @@ export class UsersPage {
     const pageSize = 2;
     const totalPages = Math.ceil(filteredItems.length / pageSize);
     const usersRecord: Record<number, Observable<TemplateModel<User>>> = {};
-    for (let page = 1; page <= totalPages; page++) {
-      const start = (page - 1) * pageSize;
-      const pageItems = filteredItems.slice(start, start + pageSize);
-      usersRecord[page] = of({
-        items: pageItems,
-        total: filteredItems.length,
-        loading: users.loading,
-        error: users.error,
+    const { loading, error } = users;
+    if (totalPages) {
+      for (let page = 1; page <= totalPages; page++) {
+        const start = (page - 1) * pageSize;
+        const pageItems = filteredItems.slice(start, start + pageSize);
+        usersRecord[page] = of({
+          items: pageItems,
+          total: filteredItems.length,
+          loading,
+          error,
+        });
+      }
+    } else {
+      usersRecord[1] = of({
+        items: [],
+        total: 0,
+        loading,
+        error,
       });
     }
     return usersRecord;
@@ -157,11 +180,7 @@ export class UsersPage {
   private readonly selectedPageUsers$ = this.allUsers$.pipe(
     withLatestFrom(this.selectedPage$),
     takeUntilDestroyed(this.destroyRef),
-    switchMap(
-      ([users, selectedPage]) =>
-        users[selectedPage.page] ??
-        of({ items: [], loading: false, error: false, total: 0 }),
-    ),
+    switchMap(([users, selectedPage]) => users[selectedPage.page]),
   );
 
   readonly selectedPageUsers = toSignal(this.selectedPageUsers$);
@@ -192,12 +211,23 @@ export class UsersPage {
     this.modalOpen.set(false);
   }
 
+  retryOnError(): void {
+    if (this.selectedPageType() === SearchType.WITH_FILTERS) {
+      this.retryUsersWithFilters.next();
+    } else {
+      this.retryUsersWithoutFilters.next();
+    }
+  }
+
   private getUsersWithoutFilters({
     page,
     limit,
   }: UsersRequest): Observable<TemplateModel<User>> {
-    return this.getUsersUseCase
-      .execute({ page, limit })
-      .pipe(shareReplay({ refCount: true, bufferSize: 1 }));
+    return this.getUsersUseCase.execute({ page, limit }).pipe(
+      shareReplay({ refCount: true, bufferSize: 1 }),
+      catchError(() => {
+        return of({ items: [], loading: false, error: true, total: 0 });
+      }),
+    );
   }
 }

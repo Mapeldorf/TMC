@@ -21,28 +21,38 @@ import { User } from '../interfaces/user.interface';
         </div>
       } @else if (users.error) {
         <div
-          class="flex items-center gap-3 p-4 rounded-xl bg-red-100 text-red-700 border border-red-300 shadow-sm"
+          class="flex items-center justify-between gap-4 p-4 rounded-xl bg-red-100 text-red-700 border border-red-300 shadow-sm"
           role="alert"
         >
-          <svg
-            class="w-6 h-6 text-red-500"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
+          <div class="flex items-center gap-3">
+            <svg
+              class="w-6 h-6 text-red-500"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0z"
+              ></path>
+            </svg>
+            <span>
+              Ocurrió un error al cargar los datos. Por favor, intenta
+              nuevamente.
+            </span>
+          </div>
+          <button
+            type="button"
+            (click)="retry.emit()"
+            class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-1.5 px-4 rounded-lg transition duration-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
+            aria-label="Reintentar cargar datos"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0z"
-            ></path>
-          </svg>
-          <span
-            >Ocurrió un error al cargar los datos. Por favor, intenta
-            nuevamente.</span
-          >
+            Reintentar
+          </button>
         </div>
       } @else if (users.items.length) {
         <div
@@ -98,6 +108,8 @@ export class ListComponent {
   readonly users = input<TemplateModel<User>>();
 
   readonly selectedUser = output<User>();
+
+  readonly retry = output();
 
   setSelectedUser(user: User): void {
     this.selectedUser.emit(user);
