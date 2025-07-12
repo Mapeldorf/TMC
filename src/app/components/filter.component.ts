@@ -1,6 +1,6 @@
 import { Component, inject, Output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime } from 'rxjs';
+import { debounceTime, filter, merge } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -51,7 +51,16 @@ export class FilterComponent {
     email: [''],
   });
 
-  @Output() formValue = this.form.valueChanges.pipe(debounceTime(750));
+  private readonly formValueChange$ = this.form.valueChanges.pipe(
+    filter(({ name, email }) => Boolean(email) || Boolean(name)),
+    debounceTime(750),
+  );
+
+  private readonly clearFilters$ = this.form.valueChanges.pipe(
+    filter(({ name, email }) => !email && !name),
+  );
+
+  @Output() formValue = merge(this.formValueChange$, this.clearFilters$);
 
   clearFilters(): void {
     this.form.setValue({ email: '', name: '' });
