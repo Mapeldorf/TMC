@@ -1,6 +1,6 @@
-import { Component, inject, output } from '@angular/core';
+import { Component, inject, Output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { FormValue } from '../interfaces/form-value.interface';
+import { debounceTime } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -9,7 +9,6 @@ import { FormValue } from '../interfaces/form-value.interface';
   template: `
     <form
       [formGroup]="form"
-      (ngSubmit)="onSubmit()"
       class="bg-white p-6 rounded-2xl shadow-md space-y-6"
       role="search"
       aria-label="Formulario de filtrado de usuarios"
@@ -35,13 +34,6 @@ import { FormValue } from '../interfaces/form-value.interface';
         />
       </div>
       <button
-        type="submit"
-        class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 mr-4 rounded-lg transition duration-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
-        aria-label="Aplicar filtros"
-      >
-        Filtrar
-      </button>
-      <button
         (click)="clearFilters()"
         class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
         aria-label="Limpiar filtros"
@@ -54,19 +46,14 @@ import { FormValue } from '../interfaces/form-value.interface';
 export class FilterComponent {
   private readonly fb = inject(FormBuilder);
 
-  readonly formValue = output<FormValue>();
-
   readonly form = this.fb.group({
     name: [''],
     email: [''],
   });
 
-  onSubmit(): void {
-    this.formValue.emit(this.form.value);
-  }
+  @Output() formValue = this.form.valueChanges.pipe(debounceTime(750));
 
   clearFilters(): void {
     this.form.setValue({ email: '', name: '' });
-    this.onSubmit();
   }
 }
