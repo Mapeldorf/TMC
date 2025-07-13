@@ -123,9 +123,7 @@ export class UserDetailModalComponent {
   constructor() {
     effect(() => {
       if (this.open()) {
-        queueMicrotask(() => {
-          this.modalPanel()?.nativeElement?.focus();
-        });
+        this.modalPanel()?.nativeElement?.focus();
       }
     });
   }
