@@ -23,7 +23,7 @@
   @if (modalOpen()) {
     <app-user-detail-modal
       [open]="modalOpen()"
-      [user]="selectedUser"
+      [user]="selectedUser()"
       (closeModal)="modalOpen.set(false)"
     />
   }

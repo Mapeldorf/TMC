@@ -107,7 +107,7 @@ import { User } from '../interfaces/user.interface';
 export class UserDetailModalComponent {
   readonly open = input<boolean>();
 
-  readonly user = input<User>();
+  readonly user = input<User | null>();
 
   readonly closeModal = output<void>();
 

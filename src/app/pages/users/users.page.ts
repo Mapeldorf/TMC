@@ -78,7 +78,7 @@ export class UsersPage {
 
   readonly modalOpen = signal(false);
 
-  selectedUser!: User;
+  readonly selectedUser = signal<User | null>(null);
 
   private readonly allUserData$ = this.getUsersUseCase.execute().pipe(
     takeUntilDestroyed(this.destroyRef),
@@ -203,7 +203,7 @@ export class UsersPage {
   }
 
   openUserDetailModal(user: User): void {
-    this.selectedUser = user;
+    this.selectedUser.set(user);
     this.modalOpen.set(true);
   }
 
