@@ -71,7 +71,7 @@ export class UsersPage {
         this.currentIndex.set(0);
       }),
     ),
-  );
+  ).pipe(takeUntilDestroyed(this.destroyRef));
 
   readonly currentIndex = signal<number>(0);
 
@@ -103,21 +103,21 @@ export class UsersPage {
     }, {}),
   );
 
+  private readonly usersWithFiltersTrigger$ = combineLatest([
+    this.formValue$.pipe(
+      filter(
+        (formValue) => Boolean(formValue.email) || Boolean(formValue.name),
+      ),
+    ),
+    this.selectedPage$.pipe(
+      filter(({ type }) => type === SearchType.WITH_FILTERS),
+      switchMap(() => this.allUserData$),
+    ),
+  ]).pipe(takeUntilDestroyed(this.destroyRef));
+
   private readonly usersWithFilters$ = this.retryUsersWithFilters.pipe(
     startWith(null),
-    switchMap(() =>
-      combineLatest([
-        this.formValue$.pipe(
-          filter(
-            (formValue) => Boolean(formValue.email) || Boolean(formValue.name),
-          ),
-        ),
-        this.selectedPage$.pipe(
-          filter(({ type }) => type === SearchType.WITH_FILTERS),
-          switchMap(() => this.allUserData$),
-        ),
-      ]),
-    ),
+    switchMap(() => this.usersWithFiltersTrigger$),
     map(([formValue, users]) => {
       const filteredItems = this.getFilteredItemsForUsersWithFilters(
         formValue,
@@ -125,6 +125,7 @@ export class UsersPage {
       );
       return buildPaginatedRecord(filteredItems, users, this.PAGE_SIZE);
     }),
+    takeUntilDestroyed(this.destroyRef),
   );
 
   private getFilteredItemsForUsersWithFilters(
