@@ -133,12 +133,15 @@ export class UsersPage {
     users: TemplateModel<User>,
   ): User[] {
     return users.items.filter((user) => {
-      return (
-        (formValue.email &&
-          user.email.toLowerCase().includes(formValue.email.toLowerCase())) ||
-        (formValue.name &&
-          user.name.toLowerCase().includes(formValue.name.toLowerCase()))
-      );
+      const matchesEmail = formValue.email
+        ? user.email.toLowerCase().includes(formValue.email.toLowerCase())
+        : true;
+
+      const matchesName = formValue.name
+        ? user.name.toLowerCase().includes(formValue.name.toLowerCase())
+        : true;
+
+      return matchesEmail && matchesName;
     });
   }
 
